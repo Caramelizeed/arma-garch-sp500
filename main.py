@@ -3,6 +3,7 @@ from src.data.preprocess import preprocess_sp500
 from src.diagnostics.stationarity import test_sp500_returns
 from src.diagnostics.acf_pacf import run_acf_pacf_analysis
 from src.diagnostics.arch_test import test_arch_effects
+from src.models.arma_garch import fit_arma_garch
 
 if __name__ == "__main__":
     fetch_sp500()
@@ -10,4 +11,5 @@ if __name__ == "__main__":
     test_sp500_returns()
     run_acf_pacf_analysis()
     test_arch_effects()
+    fit_arma_garch()
     print(df.head())
