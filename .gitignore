@@ -1,0 +1,15 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Data (raw can get large, optional depending on your workflow)
+data/raw/*.csv
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
