@@ -4,6 +4,7 @@ from src.diagnostics.stationarity import test_sp500_returns
 from src.diagnostics.acf_pacf import run_acf_pacf_analysis
 from src.diagnostics.arch_test import test_arch_effects
 from src.models.arma_garch import fit_arma_garch
+from src.diagnostics.residuals import run_residual_diagnostics
 
 if __name__ == "__main__":
     fetch_sp500()
@@ -12,4 +13,5 @@ if __name__ == "__main__":
     run_acf_pacf_analysis()
     test_arch_effects()
     fit_arma_garch()
+    run_residual_diagnostics()
     print(df.head())
