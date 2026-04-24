@@ -30,6 +30,8 @@ def save_processed_data(df):
     file_path = DATA_PROCESSED / "sp500_returns.csv"
     file_path.parent.mkdir(parents=True, exist_ok=True)
 
+    df.columns.name = None  # Remove column name if exists
+
     df.to_csv(file_path, index=False)
 
     print(f"[INFO] Processed data saved to {file_path}")

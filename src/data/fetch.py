@@ -35,6 +35,7 @@ def fetch_sp500(start="2010-01-01", end=None, force=False):
     # Handle MultiIndex columns
     if isinstance(data.columns, pd.MultiIndex):
         data.columns = data.columns.get_level_values(0)
+    data.columns.name = None  # Remove column name if exists
 
     # Validation checks
     if data is None or data.empty:
