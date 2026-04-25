@@ -15,21 +15,19 @@ def load_returns():
 
 def fit_arma_garch():
     df = load_returns()
-
-    returns = df["log_return"] * 100  # scale for numerical stability
+    returns = df["log_return"] * 100
 
     model = arch_model(
         returns,
         mean="ARX",
         lags=1,
-        vol="Garch",
+        vol="GARCH",
         p=1,
+        o=1,          # 🔴 adds GJR asymmetry term
         q=1,
-        dist="normal"
+        dist="t"      # keep Student-t
     )
 
     result = model.fit(disp="off")
-
     print(result.summary())
-
     return result
