@@ -7,6 +7,7 @@ from src.models.arma_garch import fit_arma_garch
 from src.diagnostics.residuals import run_residual_diagnostics
 from src.models.forecast import forecast_volatility, plot_volatility
 from src.models.rolling_forecast import plot_rolling_forecast
+from src.models.evaluate import evaluate_forecasts
 
 if __name__ == "__main__":
     fetch_sp500()
@@ -19,4 +20,5 @@ if __name__ == "__main__":
     plot_volatility()
     forecast_volatility(horizon=5)
     plot_rolling_forecast()
+    evaluate_forecasts()
     print(df.head())
