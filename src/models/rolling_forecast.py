@@ -1,3 +1,4 @@
+from matplotlib.pylab import norm
 import pandas as pd
 import numpy as np
 from arch import arch_model
@@ -55,3 +56,59 @@ def rolling_volatility_forecast(window=1000, horizon=1, step=5):
     index = returns.index[window:len(returns)-horizon:step]
 
     return pd.Series(forecasts, index=index), pd.Series(actuals, index=index)
+
+def rolling_var(window=1000, alpha=0.05, dist="normal"):
+    df = load_returns()
+    returns = df["log_return"] * 100
+
+    var_series = []
+    actuals = []
+
+    for i in range(window, len(returns) - 1):
+        train = returns[i - window:i]
+
+        model = arch_model(
+            train,
+            mean="ARX",
+            lags=1,
+            vol="GARCH",
+            p=1,
+            o=1,
+            q=1,
+            dist=dist
+        )
+
+        res = model.fit(disp="off")
+
+        # 1-step ahead forecast
+        fcast = res.forecast(horizon=1)
+        sigma = np.sqrt(fcast.variance.iloc[-1, 0])
+
+        # distribution-specific quantile
+        if dist == "t":
+            nu = res.params["nu"]
+            q = t.ppf(alpha, df=nu) * np.sqrt((nu - 2) / nu)
+        else:
+            q = norm.ppf(alpha)
+
+        var = sigma * q  # mean ≈ 0
+
+        var_series.append(var)
+        actuals.append(returns.iloc[i])
+
+    index = returns.index[window:len(returns)-1]
+
+    return pd.Series(var_series, index=index), pd.Series(actuals, index=index)
+
+def rolling_var_backtest(window=1000, alpha=0.05, dist="normal"):
+    var_series, actuals = rolling_var(window, alpha, dist)
+
+    violations = actuals < var_series
+    rate = violations.mean()
+
+    print("\n[Rolling VaR Backtest]")
+    print(f"Distribution : {dist}")
+    print(f"Expected     : {alpha}")
+    print(f"Observed     : {rate:.4f}")
+    print(f"Violations   : {violations.sum()} / {len(violations)}")
+    return rolling_var_backtest

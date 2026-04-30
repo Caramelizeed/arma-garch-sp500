@@ -25,7 +25,7 @@ def fit_arma_garch():
         p=1,
         o=1,          # 🔴 adds GJR asymmetry term
         q=1,
-        dist="t"      # keep Student-t
+        dist="normal"      # keep Student-t
     )
 
     result = model.fit(disp="off")

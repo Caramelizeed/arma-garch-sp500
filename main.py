@@ -8,6 +8,8 @@ from src.diagnostics.residuals import run_residual_diagnostics
 from src.models.forecast import forecast_volatility, plot_volatility
 from src.models.rolling_forecast import plot_rolling_forecast
 from src.models.evaluate import evaluate_forecasts
+from src.models.var import compute_var,plot_var,var_backtest
+from src.models.rolling_forecast import rolling_var_backtest
 
 if __name__ == "__main__":
     fetch_sp500()
@@ -21,4 +23,8 @@ if __name__ == "__main__":
     forecast_volatility(horizon=5)
     plot_rolling_forecast()
     evaluate_forecasts()
+    df_var = compute_var(alpha=0.05)
+    plot_var(df_var, alpha=0.05)
+    var_backtest(df_var, alpha=0.05)
+    rolling_var_backtest(alpha=0.05,dist="normal")
     print(df.head())
