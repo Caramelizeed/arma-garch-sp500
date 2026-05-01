@@ -112,3 +112,5 @@ def rolling_var_backtest(window=1000, alpha=0.05, dist="normal"):
     print(f"Observed     : {rate:.4f}")
     print(f"Violations   : {violations.sum()} / {len(violations)}")
     return rolling_var_backtest
+
+#gonnna start working no the parametre
