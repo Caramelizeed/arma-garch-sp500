@@ -1,16 +1,55 @@
-from matplotlib.pylab import norm
 import pandas as pd
 import numpy as np
 from arch import arch_model
 import matplotlib.pyplot as plt
+from scipy.stats import t, norm
 
 from src.utils.config import DATA_PROCESSED
 
 
+# =========================
+# LOAD DATA
+# =========================
 def load_returns():
     df = pd.read_csv(DATA_PROCESSED / "sp500_returns.csv", parse_dates=["Date"])
     df = df.sort_values("Date")
     return df
+
+
+# =========================
+# ROLLING VOLATILITY
+# =========================
+def rolling_volatility_forecast(window=1000, horizon=1, step=5):
+    df = load_returns()
+    returns = df["log_return"] * 100
+
+    forecasts = []
+    actuals = []
+
+    for i in range(window, len(returns) - horizon, step):
+        train = returns[i - window:i]
+
+        model = arch_model(
+            train,
+            mean="Zero",   # more stable for volatility
+            vol="GARCH",
+            p=1,
+            o=1,
+            q=1,
+            dist="t"
+        )
+
+        res = model.fit(disp="off")
+
+        fcast = res.forecast(horizon=horizon)
+        var = fcast.variance.iloc[-1, 0]
+
+        forecasts.append(np.sqrt(var))
+        actuals.append(abs(returns.iloc[i]))
+
+    index = returns.index[window:len(returns)-horizon:step]
+
+    return pd.Series(forecasts, index=index), pd.Series(actuals, index=index)
 
 
 def plot_rolling_forecast():
@@ -24,39 +63,10 @@ def plot_rolling_forecast():
     plt.legend()
     plt.show()
 
-def rolling_volatility_forecast(window=1000, horizon=1, step=5):
-    df = load_returns()
-    returns = df["log_return"] * 100
 
-    forecasts = []
-    actuals = []
-
-    for i in range(window, len(returns) - horizon, step):
-        train = returns[i - window:i]
-
-        model = arch_model(
-            train,
-            mean="ARX",
-            lags=1,
-            vol="GARCH",
-            p=1,
-            o=1,
-            q=1,
-            dist="t"
-        )
-
-        result = model.fit(disp="off")
-
-        fcast = result.forecast(horizon=horizon)
-        var = fcast.variance.iloc[-1, 0]
-
-        forecasts.append(np.sqrt(var))
-        actuals.append(abs(returns.iloc[i]))
-
-    index = returns.index[window:len(returns)-horizon:step]
-
-    return pd.Series(forecasts, index=index), pd.Series(actuals, index=index)
-
+# =========================
+# ROLLING VaR
+# =========================
 def rolling_var(window=1000, alpha=0.05, dist="normal"):
     df = load_returns()
     returns = df["log_return"] * 100
@@ -69,8 +79,7 @@ def rolling_var(window=1000, alpha=0.05, dist="normal"):
 
         model = arch_model(
             train,
-            mean="ARX",
-            lags=1,
+            mean="Zero",   # important for VaR stability
             vol="GARCH",
             p=1,
             o=1,
@@ -80,11 +89,11 @@ def rolling_var(window=1000, alpha=0.05, dist="normal"):
 
         res = model.fit(disp="off")
 
-        # 1-step ahead forecast
+        # Forecast next-step variance
         fcast = res.forecast(horizon=1)
         sigma = np.sqrt(fcast.variance.iloc[-1, 0])
 
-        # distribution-specific quantile
+        # Distribution handling
         if dist == "t":
             nu = res.params["nu"]
             q = t.ppf(alpha, df=nu) * np.sqrt((nu - 2) / nu)
@@ -100,6 +109,10 @@ def rolling_var(window=1000, alpha=0.05, dist="normal"):
 
     return pd.Series(var_series, index=index), pd.Series(actuals, index=index)
 
+
+# =========================
+# ROLLING VaR BACKTEST
+# =========================
 def rolling_var_backtest(window=1000, alpha=0.05, dist="normal"):
     var_series, actuals = rolling_var(window, alpha, dist)
 
@@ -111,6 +124,5 @@ def rolling_var_backtest(window=1000, alpha=0.05, dist="normal"):
     print(f"Expected     : {alpha}")
     print(f"Observed     : {rate:.4f}")
     print(f"Violations   : {violations.sum()} / {len(violations)}")
-    return rolling_var_backtest
 
-#gonnna start working no the parametre
+    return rate
