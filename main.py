@@ -13,6 +13,8 @@ from src.models.rolling_forecast import (
 )
 from src.models.evaluate import evaluate_forecasts
 
+from src.models.kupiec import kupiec_test
+
 
 if __name__ == "__main__":
     # =========================
@@ -49,5 +51,7 @@ if __name__ == "__main__":
     # 6. FINAL RISK MODEL (IMPORTANT)
     # =========================
     rolling_var_backtest(alpha=0.05, dist="normal")
+
+    kupiec_test(alpha=0.05, dist="normal", window=1000)
 
     print(df.head())
