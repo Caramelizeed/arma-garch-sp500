@@ -16,6 +16,7 @@ from src.models.evaluate import evaluate_forecasts
 from src.models.kupiec import kupiec_test
 from src.models.es import es_backtest
 
+from src.models.christoffersen import christoffersen_test
 
 if __name__ == "__main__":
     # =========================
@@ -57,4 +58,6 @@ if __name__ == "__main__":
 
     es_backtest(alpha=0.05, dist="normal", window=1000)
 
+    christoffersen_test(alpha=0.05, dist="normal")
+    
     print(df.head())
