@@ -1,92 +1,178 @@
-# ARMA–GARCH Modeling on S&P 500 Returns
+# ARMA–GJR-GARCH Risk Modeling on S&P 500 Returns
 
 ## Overview
 
-This project implements a full econometric pipeline to model financial time series using an ARMA–GARCH framework on S&P 500 daily returns.
+This project implements a complete econometric and risk modeling pipeline on S&P 500 daily returns using an AR–GJR-GARCH framework.
 
-The objective is to:
+The system goes beyond volatility modeling and includes:
 
-* model the conditional mean (AR component)
-* model time-varying volatility (GARCH component)
-* validate statistical assumptions rigorously before fitting
+- conditional mean modeling (AR)
+- conditional volatility modeling (GJR-GARCH)
+- rolling volatility forecasting
+- Value-at-Risk (VaR) estimation
+- Expected Shortfall (ES)
+- statistical backtesting (Kupiec & Christoffersen tests)
+
+---
+
+## Objectives
+
+- Model time-varying volatility in financial returns
+- Quantify market risk using VaR and ES
+- Validate models using rigorous statistical tests
+- Build a research-grade quantitative risk pipeline
 
 ---
 
 ## Data
 
-* Source: Yahoo Finance (`^GSPC`)
-* Frequency: Daily
-* Period: ~2010–present
-* Stored in:
+- **Source:** Yahoo Finance (`^GSPC`)
+- **Frequency:** Daily
+- **Period:** ~2010–present
 
-  * `data/raw/` → original prices
-  * `data/processed/` → log returns
+Stored in:
+
+- `data/raw/` → raw OHLCV data
+- `data/processed/` → cleaned log returns
 
 ---
 
-## Pipeline
+## Methodology
 
-### 1. Data Ingestion
+### 1. Preprocessing
 
-* Fetch OHLCV data
-* Handle API inconsistencies (MultiIndex normalization)
-* Store locally for reproducibility
+Log returns computed as:
 
-### 2. Preprocessing
+```
+r_t = log(P_t / P_{t-1})
+```
 
-* Compute log returns:
+- Missing values removed
+- Chronological ordering enforced
 
-  r_t = log(P_t / P_{t-1})
+---
 
-* Remove NaNs
+### 2. Stationarity (ADF Test)
 
-* Ensure time ordering
+- Null: non-stationary
+- Result: rejected → returns are stationary
 
-### 3. Stationarity Test (ADF)
+---
 
-* Null: non-stationary
-* Result: rejected → returns are stationary
+### 3. ARCH Effect Detection
 
-### 4. ACF / PACF Analysis
+- Strong ARCH effects detected
+- Confirms volatility clustering
+- Justifies GARCH-family models
 
-* Minimal autocorrelation observed
-* Weak AR(1) structure at most
+---
 
-### 5. ARCH Test
+### 4. Model Specification
 
-* Strong ARCH effects detected
-* Confirms volatility clustering
+**Mean Model:** AR(1)
 
-### 6. ARMA–GARCH Model
+**Volatility Model:** GJR-GARCH(1,1)
 
-* Mean: AR(1)
-* Volatility: GARCH(1,1)
+**Equations:**
 
-Model form:
-
+```
 r_t = μ + φ r_{t-1} + ε_t
-σ_t² = ω + α ε_{t-1}² + β σ_{t-1}²
+σ_t² = ω + α ε_{t-1}² + γ I(ε_{t-1}<0) ε_{t-1}² + β σ_{t-1}²
+```
 
 ---
 
-## Key Results
+### 5. Key Properties
 
-* Returns are stationary
-* Mean predictability is weak
-* Strong volatility clustering observed
-* GARCH parameters show high persistence:
+- High persistence: α + β ≈ 0.97
+- Significant asymmetry (γ > 0)
+- Negative shocks increase volatility more than positive shocks
 
-  α + β ≈ 0.97
+---
 
-Interpretation:
+## Diagnostics
 
-* market direction is largely unpredictable
-* volatility (risk) is predictable
+### Residual Tests
+
+| Test | Result |
+|------|--------|
+| Ljung-Box (residuals) | ✔ no autocorrelation |
+| Ljung-Box (squared residuals) | ✔ volatility captured |
+| ARCH test (residuals) | ⚠ minor remaining effects |
+
+---
+
+## Forecasting
+
+Rolling volatility forecasts implemented.
+
+**Evaluation Metrics:**
+
+| Metric | Value |
+|--------|-------|
+| MSE    | ~0.63 |
+| MAE    | ~0.56 |
+| QLIKE  | ~0.71 |
+
+---
+
+## Risk Modeling
+
+### Rolling VaR (5%)
+
+- Observed violation rate: **5.55%**
+- Expected: **5.00%**
+
+> Slight underestimation of risk — within acceptable tolerance.
+
+---
+
+### Kupiec Test (Unconditional Coverage)
+
+- LR = 1.91 < 3.84 → **ACCEPT**
+
+> Correct violation frequency confirmed.
+
+---
+
+### Christoffersen Test (Independence)
+
+- LR = 0.036 < 3.84 → **ACCEPT**
+
+> No clustering of violations detected.
+
+---
+
+### Expected Shortfall (ES)
+
+| Metric       | Value  |
+|--------------|--------|
+| Avg Tail Loss | -2.187 |
+| ES Estimate  | -2.108 |
+| Difference   | +0.079 |
+
+> Mild underestimation (~3–4%), consistent with VaR behavior.
+
+---
+
+## Final Model Assessment
+
+The model satisfies:
+
+- ✔ Correct violation frequency
+- ✔ Independent violations
+- ✔ Reasonable tail estimation
+- ✔ Stable volatility forecasts
+
+**Conclusion:**
+
+> Statistically validated and suitable as a baseline risk model.
 
 ---
 
 ## Project Structure
 
+```
 arma-garch-sp500/
 │
 ├── data/
@@ -102,6 +188,7 @@ arma-garch-sp500/
 ├── main.py
 ├── requirements.txt
 └── README.md
+```
 
 ---
 
@@ -111,38 +198,57 @@ arma-garch-sp500/
 python main.py
 ```
 
-Pipeline executed:
+**Pipeline includes:**
 
-* data fetch
-* preprocessing
-* ADF test
-* ACF/PACF analysis
-* ARCH test
-* ARMA–GARCH fit
+1. Data ingestion
+2. Preprocessing
+3. Diagnostics
+4. Model fitting
+5. Rolling forecasts
+6. VaR & ES computation
+7. Statistical validation
 
 ---
 
 ## Dependencies
 
-* numpy
-* pandas
-* statsmodels
-* arch
-* yfinance
-* matplotlib
+```
+numpy
+pandas
+statsmodels
+arch
+yfinance
+matplotlib
+scipy
+```
+
+Install via:
+
+```bash
+pip install -r requirements.txt
+```
 
 ---
 
-## Next Steps
+## Limitations
 
-* Residual diagnostics
-* Student-t GARCH (fat tails)
-* Volatility forecasting
-* Backtesting strategies based on volatility
+- Residual ARCH effects remain in standardized residuals
+- Normal distribution assumption underestimates extreme tails slightly
+- Single-asset model — no portfolio extension
+
+---
+
+## Future Work
+
+- EGARCH / advanced asymmetric volatility models
+- Student-t / skewed-t error distributions
+- Portfolio-level VaR & ES
+- Extreme Value Theory (EVT)
+- Volatility-based trading strategies
 
 ---
 
 ## Notes
 
-* This project focuses on volatility modeling, not return prediction
-* Designed as a research-grade baseline for quantitative finance workflows
+- Focus is on **risk modeling**, not return prediction
+- Designed as a **research-grade baseline** for quantitative finance workflows
